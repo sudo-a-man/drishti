@@ -5,7 +5,7 @@ import { INSTRUMENTS, type Side } from "@/lib/fakeData";
 
 const BASE = "https://api-t1.fyers.in";
 const TOKEN_FILE = path.join(process.cwd(), ".fyers-token.json");
-export const FYERS_REDIRECT = "http://127.0.0.1:3000/api/fyers/callback";
+export const FYERS_REDIRECT = process.env.FYERS_REDIRECT_URI || "http://127.0.0.1:3000/api/fyers/callback";
 
 export function fyersConfigured(): boolean {
   return Boolean(process.env.FYERS_APP_ID && process.env.FYERS_SECRET_ID);
@@ -56,6 +56,15 @@ export async function fyersConnected(): Promise<boolean> {
 
 export async function fyersAccessToken(): Promise<string | null> {
   return readToken();
+}
+
+export async function fyersTokenInfo(): Promise<{ connected: boolean; at: number | null }> {
+  try {
+    const t = JSON.parse(await fs.readFile(TOKEN_FILE, "utf8"));
+    return { connected: Boolean(t.access_token), at: typeof t.at === "number" ? t.at : null };
+  } catch {
+    return { connected: false, at: null };
+  }
 }
 
 type BaseRow = {

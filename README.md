@@ -1,4 +1,4 @@
-# Lumetra
+# Drishti
 
 Real-time F&O market analytics for Indian traders. Live option flow, max pain, support and resistance walls, Gann levels, and charts with liquidity zones. Analytics, not advice.
 

@@ -52,7 +52,7 @@ export default function Home() {
               See what the market&apos;s <span className="text-gradient">actually doing</span>.
             </h1>
             <p className="animate-rise delay-2 max-w-lg text-lg text-text-muted">
-              Lumetra scores every F&amp;O stock every minute and marks the levels that matter (max pain, the walls, liquidity zones, Gann). You open one screen and you&apos;re ready, not forty charts deep.
+              Drishti scores every F&amp;O stock every minute and marks the levels that matter (max pain, the walls, liquidity zones, Gann). You open one screen and you&apos;re ready, not forty charts deep.
             </p>
             <div className="animate-rise delay-3 flex flex-wrap gap-3">
               <Link href="/signup"><Button size="lg">Start free</Button></Link>
@@ -113,7 +113,7 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-10 md:grid-cols-[1fr_1.2fr]">
           <div>
-            <div className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent-text">Why Lumetra</div>
+            <div className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent-text">Why Drishti</div>
             <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">Built like a product. Priced like a tool.</h2>
             <p className="mt-3 text-text-muted">The others want ₹9,999 a year up front for a black box you can&apos;t try. We did the opposite.</p>
           </div>
