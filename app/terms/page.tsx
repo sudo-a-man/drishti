@@ -1,4 +1,4 @@
-export const metadata = { title: "Terms & Conditions · Lumetra" };
+export const metadata = { title: "Terms & Conditions · Drishti" };
 
 export default function TermsPage() {
   return (

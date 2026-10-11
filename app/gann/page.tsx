@@ -1,6 +1,6 @@
 import GannCalc from "@/components/GannCalc";
 
-export const metadata = { title: "Gann Square of 9 calculator — Lumetra" };
+export const metadata = { title: "Gann Square of 9 calculator — Drishti" };
 
 export default function GannPage() {
   return (

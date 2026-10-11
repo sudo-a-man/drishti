@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button, Card } from "@/components/ui";
+import FyersConnect from "@/components/FyersConnect";
 import { currentUser } from "@/lib/auth/user";
 import { signOut } from "@/lib/auth/actions";
 
@@ -42,6 +43,7 @@ export default async function AccountPage() {
           </form>
         </div>
       </Card>
+      <FyersConnect />
     </div>
   );
 }

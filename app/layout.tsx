@@ -11,7 +11,7 @@ const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-display-g"
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono-g", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Lumetra — F&O intelligence, decoded in real time",
+  title: "Drishti — F&O intelligence, decoded in real time",
   description: "An enterprise-grade market-analytics terminal for Indian F&O traders. Live option flow, max pain, support/resistance and Gann levels — analytics, not advice.",
 };
 
@@ -24,6 +24,8 @@ const nav = [
   { href: "/gann", label: "Gann" },
   { href: "/charts", label: "Charts" },
   { href: "/lab", label: "Lab" },
+  { href: "/crypto", label: "Crypto" },
+  { href: "/portfolio", label: "Portfolio" },
   { href: "/pricing", label: "Pricing" },
 ];
 const tabs = [
@@ -50,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-grad-accent shadow-glow">
                 <span className="h-2.5 w-2.5 rotate-45 rounded-[3px] bg-bg" />
               </span>
-              <span className="font-display text-lg font-bold tracking-tight">Lume<span className="text-gradient">tra</span></span>
+              <span className="font-display text-lg font-bold tracking-tight">Drish<span className="text-gradient">ti</span></span>
             </Link>
             <nav className="ml-5 hidden items-center gap-5 lg:flex">
               {nav.map((n) => (
@@ -83,7 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="mt-24 border-t border-border bg-bg-elevated">
           <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
             <div className="flex flex-col gap-3">
-              <span className="font-display text-lg font-bold tracking-tight">Lume<span className="text-gradient">tra</span></span>
+              <span className="font-display text-lg font-bold tracking-tight">Drish<span className="text-gradient">ti</span></span>
               <p className="max-w-xs text-sm text-text-muted">The F&amp;O analytics terminal for Indian traders. Live option flow, structure and levels — in one calm screen.</p>
               <p className="text-xs text-text-faint">Analytics for education only. Not investment advice. Derivatives carry a high risk of loss.</p>
             </div>
@@ -99,7 +101,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/refund-policy" className="text-text-muted transition-colors hover:text-text">Refund policy</Link>
             </div>
           </div>
-          <div className="border-t border-border py-5 text-center text-xs text-text-faint">© {new Date().getFullYear()} Lumetra. Market analytics for Indian F&amp;O traders.</div>
+          <div className="border-t border-border py-5 text-center text-xs text-text-faint">© {new Date().getFullYear()} Drishti. Market analytics for Indian F&amp;O traders.</div>
         </footer>
 
         <nav aria-label="Primary" className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border md:hidden">

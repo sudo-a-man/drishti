@@ -1,4 +1,4 @@
-export const metadata = { title: "Privacy Policy · Lumetra" };
+export const metadata = { title: "Privacy Policy · Drishti" };
 
 export default function PrivacyPage() {
   return (
