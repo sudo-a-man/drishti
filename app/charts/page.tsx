@@ -7,7 +7,7 @@ import { openingRange } from "@/lib/sim/indicator";
 import { fairValueGaps, orderBlocks } from "@/lib/ict";
 import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
-import { algoX } from "@/lib/indicators/pine";
+import { ifvg } from "@/lib/indicators/ifvg";
 import { killzones, INDIA_SESSIONS, INDIA_TZ } from "@/lib/indicators/killzones";
 
 const INDEXES = [
@@ -31,7 +31,7 @@ export default function ChartsPage() {
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: "index" });
-  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, algox: false, killzones: false });
+  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, ifvg: false, killzones: false });
   const [strikeSide, setStrikeSide] = useState<"CE" | "PE">("CE");
   const meta = INDEXES.find((i) => i.id === index)!;
 
@@ -110,10 +110,10 @@ export default function ChartsPage() {
         levelLines.push(...t.lines.map((l) => ({ color: l.color, dashed: l.dashed, noScale: l.noScale, points: l.points })));
         markers.push(...t.markers);
       }
-      if (overlay.algox) {
-        const a = algoX(candles);
-        levelLines.push(...a.levelLines);
-        markers.push(...a.markers);
+      if (overlay.ifvg) {
+        const v = ifvg(candles);
+        bx.push(...v.boxes);
+        markers.push(...v.markers);
       }
       if (overlay.killzones && res !== "D") {
         const kz = killzones(candles, INDIA_SESSIONS, INDIA_TZ);
@@ -122,7 +122,7 @@ export default function ChartsPage() {
       }
     }
     return { markers, levelLines, boxes: bx, hlines: hl };
-  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.algox, overlay.killzones]);
+  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.ifvg, overlay.killzones]);
 
   const stats = [
     { label: "Spot", value: fmt(opt?.spot), cls: "text-text" },
@@ -160,7 +160,7 @@ export default function ChartsPage() {
             <button onClick={() => setOverlay((o) => ({ ...o, ob: !o.ob }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.ob ? "border-border-strong text-text" : "border-border text-text-faint"}`}>OB</button>
             <button onClick={() => setOverlay((o) => ({ ...o, smc: !o.smc }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.smc ? "border-border-strong text-text" : "border-border text-text-faint"}`}>SMC</button>
             <button onClick={() => setOverlay((o) => ({ ...o, trend: !o.trend }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.trend ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Trend</button>
-            <button onClick={() => setOverlay((o) => ({ ...o, algox: !o.algox }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.algox ? "border-border-strong text-text" : "border-border text-text-faint"}`}>AlgoX</button>
+            <button onClick={() => setOverlay((o) => ({ ...o, ifvg: !o.ifvg }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.ifvg ? "border-border-strong text-text" : "border-border text-text-faint"}`}>IFVG</button>
             <button onClick={() => setOverlay((o) => ({ ...o, killzones: !o.killzones }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.killzones ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Sessions</button>
           </div>
         </div>

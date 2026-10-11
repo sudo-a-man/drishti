@@ -6,7 +6,7 @@ import { gannSquare9 } from "@/lib/gann";
 import { fairValueGaps, orderBlocks } from "@/lib/ict";
 import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
-import { algoX } from "@/lib/indicators/pine";
+import { ifvg } from "@/lib/indicators/ifvg";
 import { killzones, ICT_SESSIONS, ICT_TZ } from "@/lib/indicators/killzones";
 
 const SYMBOLS = [
@@ -20,7 +20,7 @@ const SYMBOLS = [
 const INTERVALS = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"];
 const INTRADAY = ["1m", "5m", "15m", "1h"];
 const TOGGLES = [
-  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "algox", label: "AlgoX" },
+  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "ifvg", label: "IFVG" },
   { k: "killzones", label: "Killzones" }, { k: "fvg", label: "FVG" }, { k: "ob", label: "OB" },
   { k: "gann", label: "Gann" }, { k: "zones", label: "Zones" }, { k: "bubbles", label: "Vol" },
 ] as const;
@@ -30,7 +30,7 @@ export default function CryptoChartsPage() {
   const [tf, setTf] = useState("1d");
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState(false);
-  const [ov, setOv] = useState({ smc: true, trend: true, algox: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
+  const [ov, setOv] = useState({ smc: true, trend: true, ifvg: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
 
   useEffect(() => {
     let on = true; setCandles(null); setErr(false);
@@ -42,7 +42,7 @@ export default function CryptoChartsPage() {
 
   const smcData = useMemo(() => (candles && candles.length && ov.smc ? smc(candles) : null), [candles, ov.smc]);
   const trendData = useMemo(() => (candles && candles.length && ov.trend ? trendlines(candles, tf === "1m" ? 21 : 14) : null), [candles, ov.trend, tf]);
-  const algoData = useMemo(() => (candles && candles.length && ov.algox ? algoX(candles) : null), [candles, ov.algox]);
+  const ifvgData = useMemo(() => (candles && candles.length && ov.ifvg ? ifvg(candles) : null), [candles, ov.ifvg]);
   const kzData = useMemo(() => (candles && candles.length && ov.killzones && INTRADAY.includes(tf) ? killzones(candles, ICT_SESSIONS, ICT_TZ) : null), [candles, ov.killzones, tf]);
 
   const lines = useMemo<SRLine[]>(() => {
@@ -62,29 +62,29 @@ export default function CryptoChartsPage() {
     const m: Marker[] = [];
     if (smcData) m.push(...smcData.markers);
     if (trendData) m.push(...trendData.markers);
-    if (algoData) m.push(...algoData.markers);
+    if (ifvgData) m.push(...ifvgData.markers);
     if (kzData) m.push(...kzData.markers);
     return m;
-  }, [smcData, trendData, algoData, kzData]);
+  }, [smcData, trendData, ifvgData, kzData]);
 
   const levelLines = useMemo<LevelLine[]>(() => {
     const ll: LevelLine[] = [];
     if (smcData) ll.push(...smcData.lines.map((l) => ({ color: l.color, dashed: l.dashed, points: [{ time: l.from, value: l.price }, { time: l.to, value: l.price }] })));
     if (trendData) ll.push(...trendData.lines.map((l) => ({ color: l.color, dashed: l.dashed, noScale: l.noScale, points: l.points })));
-    if (algoData) ll.push(...algoData.levelLines);
     if (kzData) ll.push(...kzData.levelLines);
     return ll;
-  }, [smcData, trendData, algoData, kzData]);
+  }, [smcData, trendData, kzData]);
 
   const boxes = useMemo(() => {
     const bx: { time: number; top: number; bottom: number; rgb: string }[] = [];
     if (candles && candles.length) {
       if (ov.fvg) bx.push(...fairValueGaps(candles));
       if (ov.ob) bx.push(...orderBlocks(candles));
+      if (ifvgData) bx.push(...ifvgData.boxes);
       if (smcData) bx.push(...smcData.boxes);
     }
     return bx;
-  }, [candles, ov.fvg, ov.ob, smcData]);
+  }, [candles, ov.fvg, ov.ob, ifvgData, smcData]);
 
   const last = candles && candles.length ? candles[candles.length - 1] : null;
   const first = candles && candles.length ? candles[0] : null;
@@ -100,7 +100,7 @@ export default function CryptoChartsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Crypto charts</h1>
-          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with SMC, trendlines, AlgoX, ICT killzones, FVG, order blocks, Gann and liquidity zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
+          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with SMC, trendlines, inversion FVGs, ICT killzones, FVG, order blocks, Gann and liquidity zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
         </div>
         <a href="/crypto" className="text-sm text-accent-text hover:underline">← Market board</a>
       </div>
@@ -132,10 +132,10 @@ export default function CryptoChartsPage() {
           ) : !err ? <Skeleton className="h-[440px] w-full" /> : null}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-3 py-2.5 text-xs text-text-muted">
-          <span>SMC · Trendlines (21 on 1m) · AlgoX · Killzones: Asia/London/NY (intraday, NY time) · FVG / OB · dashed = Gann · axis IST · CoinDCX</span>
+          <span>SMC · Trendlines (21 on 1m) · IFVG (inversion gaps) · Killzones (intraday, NY time) · FVG / OB · dashed = Gann · axis IST · CoinDCX</span>
         </div>
       </Card>
-      <p className="mt-2 text-xs text-text-muted">&quot;XAU&quot; = tokenized gold (XAUT / PAXG). Killzones show each session&apos;s high/low band on 1m–1h. Mechanical studies — not advice.</p>
+      <p className="mt-2 text-xs text-text-muted">&quot;XAU&quot; = tokenized gold (XAUT / PAXG). Mechanical studies — not advice.</p>
     </div>
   );
 }

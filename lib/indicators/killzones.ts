@@ -29,7 +29,7 @@ export function killzones(c: Candle[], sessions: Session[], tzOffsetMin: number,
   const insts: Inst[] = [];
   for (const s of sessions) {
     let inRun = false, hi = -Infinity, lo = Infinity, startT = 0, endT = 0;
-    const flush = () => { if (inRun) insts.push({ name: s.name, color: s.color, start: startT, end: endT, hi, lo }); inRun = false; hi = -Infinity; lo = Infinity; };
+    const flush = () => { if (inRun && endT > startT) insts.push({ name: s.name, color: s.color, start: startT, end: endT, hi, lo }); inRun = false; hi = -Infinity; lo = Infinity; };
     for (let i = 0; i < c.length; i++) {
       const localMin = (((Math.floor(c[i].time / 60) + tzOffsetMin) % 1440) + 1440) % 1440;
       if (localMin >= s.start && localMin < s.end) {
