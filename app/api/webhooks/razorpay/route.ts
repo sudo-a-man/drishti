@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
         status: "active",
         started_at: now.toISOString(),
         expires_at: expires.toISOString(),
-        razorpay_payment_id: payment.id,
       });
       await admin.from("transactions").insert({
         user_id: userId,
