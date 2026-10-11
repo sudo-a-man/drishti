@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+build
+*.log
+.DS_Store
+
+# secrets — never commit
+.env
+.env.local
+.env.*.local
+!.env.example
+.fyers-token.json
