@@ -9,6 +9,7 @@ import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
 import { ifvg } from "@/lib/indicators/ifvg";
 import { modelSignals } from "@/lib/indicators/mlSignals";
+import { maCross } from "@/lib/indicators/maCross";
 import { killzones, INDIA_SESSIONS, INDIA_TZ } from "@/lib/indicators/killzones";
 
 const INDEXES = [
@@ -32,7 +33,7 @@ export default function ChartsPage() {
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: "index" });
-  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, ifvg: false, killzones: false, model: false });
+  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, ifvg: false, killzones: false, model: false, macross: false });
   const [strikeSide, setStrikeSide] = useState<"CE" | "PE">("CE");
   const meta = INDEXES.find((i) => i.id === index)!;
 
@@ -124,9 +125,14 @@ export default function ChartsPage() {
         markers.push(...kz.markers);
       }
       if (modelData) markers.push(...modelData.markers);
+      if (overlay.macross) {
+        const mc = maCross(candles);
+        levelLines.push(...mc.levelLines);
+        markers.push(...mc.markers);
+      }
     }
     return { markers, levelLines, boxes: bx, hlines: hl };
-  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.ifvg, overlay.killzones, modelData]);
+  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.ifvg, overlay.killzones, modelData, overlay.macross]);
 
   const stats = [
     { label: "Spot", value: fmt(opt?.spot), cls: "text-text" },
@@ -166,6 +172,7 @@ export default function ChartsPage() {
             <button onClick={() => setOverlay((o) => ({ ...o, trend: !o.trend }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.trend ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Trend</button>
             <button onClick={() => setOverlay((o) => ({ ...o, ifvg: !o.ifvg }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.ifvg ? "border-border-strong text-text" : "border-border text-text-faint"}`}>IFVG</button>
             <button onClick={() => setOverlay((o) => ({ ...o, model: !o.model }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.model ? "border-border-strong text-text" : "border-border text-text-faint"}`}>AI/ML</button>
+            <button onClick={() => setOverlay((o) => ({ ...o, macross: !o.macross }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.macross ? "border-border-strong text-text" : "border-border text-text-faint"}`}>MA✕</button>
             <button onClick={() => setOverlay((o) => ({ ...o, killzones: !o.killzones }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.killzones ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Sessions</button>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { trendlines } from "@/lib/trendlines";
 import { ifvg } from "@/lib/indicators/ifvg";
 import { killzones, ICT_SESSIONS, ICT_TZ } from "@/lib/indicators/killzones";
 import { modelSignals } from "@/lib/indicators/mlSignals";
+import { maCross } from "@/lib/indicators/maCross";
 
 const SYMBOLS = [
   { id: "B-XAUT_USDT", label: "Gold · XAUT / USDT" },
@@ -21,7 +22,7 @@ const SYMBOLS = [
 const INTERVALS = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"];
 const INTRADAY = ["1m", "5m", "15m", "1h"];
 const TOGGLES = [
-  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "model", label: "AI/ML" },
+  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "macross", label: "MA✕" }, { k: "model", label: "AI/ML" },
   { k: "ifvg", label: "IFVG" }, { k: "killzones", label: "Killzones" }, { k: "fvg", label: "FVG" },
   { k: "ob", label: "OB" }, { k: "gann", label: "Gann" }, { k: "zones", label: "Zones" }, { k: "bubbles", label: "Vol" },
 ] as const;
@@ -31,7 +32,7 @@ export default function CryptoChartsPage() {
   const [tf, setTf] = useState("1d");
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState(false);
-  const [ov, setOv] = useState({ smc: true, trend: true, model: false, ifvg: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
+  const [ov, setOv] = useState({ smc: true, trend: true, macross: false, model: false, ifvg: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
 
   useEffect(() => {
     let on = true; setCandles(null); setErr(false);
@@ -46,6 +47,7 @@ export default function CryptoChartsPage() {
   const ifvgData = useMemo(() => (candles && candles.length && ov.ifvg ? ifvg(candles) : null), [candles, ov.ifvg]);
   const kzData = useMemo(() => (candles && candles.length && ov.killzones && INTRADAY.includes(tf) ? killzones(candles, ICT_SESSIONS, ICT_TZ) : null), [candles, ov.killzones, tf]);
   const modelData = useMemo(() => (candles && candles.length && ov.model ? modelSignals(candles) : null), [candles, ov.model]);
+  const maData = useMemo(() => (candles && candles.length && ov.macross ? maCross(candles) : null), [candles, ov.macross]);
 
   const lines = useMemo<SRLine[]>(() => {
     const L: SRLine[] = [];
@@ -67,16 +69,18 @@ export default function CryptoChartsPage() {
     if (ifvgData) m.push(...ifvgData.markers);
     if (kzData) m.push(...kzData.markers);
     if (modelData) m.push(...modelData.markers);
+    if (maData) m.push(...maData.markers);
     return m;
-  }, [smcData, trendData, ifvgData, kzData, modelData]);
+  }, [smcData, trendData, ifvgData, kzData, modelData, maData]);
 
   const levelLines = useMemo<LevelLine[]>(() => {
     const ll: LevelLine[] = [];
     if (smcData) ll.push(...smcData.lines.map((l) => ({ color: l.color, dashed: l.dashed, points: [{ time: l.from, value: l.price }, { time: l.to, value: l.price }] })));
     if (trendData) ll.push(...trendData.lines.map((l) => ({ color: l.color, dashed: l.dashed, noScale: l.noScale, points: l.points })));
     if (kzData) ll.push(...kzData.levelLines);
+    if (maData) ll.push(...maData.levelLines);
     return ll;
-  }, [smcData, trendData, kzData]);
+  }, [smcData, trendData, kzData, maData]);
 
   const boxes = useMemo(() => {
     const bx: { time: number; top: number; bottom: number; rgb: string }[] = [];
