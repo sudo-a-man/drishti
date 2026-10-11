@@ -1,4 +1,4 @@
-export const metadata = { title: "Refund Policy · Lumetra" };
+export const metadata = { title: "Refund Policy · Drishti" };
 
 export default function RefundPage() {
   return (
