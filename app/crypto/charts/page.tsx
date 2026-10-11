@@ -8,6 +8,7 @@ import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
 import { ifvg } from "@/lib/indicators/ifvg";
 import { killzones, ICT_SESSIONS, ICT_TZ } from "@/lib/indicators/killzones";
+import { modelSignals } from "@/lib/indicators/mlSignals";
 
 const SYMBOLS = [
   { id: "B-XAUT_USDT", label: "Gold · XAUT / USDT" },
@@ -20,9 +21,9 @@ const SYMBOLS = [
 const INTERVALS = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"];
 const INTRADAY = ["1m", "5m", "15m", "1h"];
 const TOGGLES = [
-  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "ifvg", label: "IFVG" },
-  { k: "killzones", label: "Killzones" }, { k: "fvg", label: "FVG" }, { k: "ob", label: "OB" },
-  { k: "gann", label: "Gann" }, { k: "zones", label: "Zones" }, { k: "bubbles", label: "Vol" },
+  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "model", label: "AI/ML" },
+  { k: "ifvg", label: "IFVG" }, { k: "killzones", label: "Killzones" }, { k: "fvg", label: "FVG" },
+  { k: "ob", label: "OB" }, { k: "gann", label: "Gann" }, { k: "zones", label: "Zones" }, { k: "bubbles", label: "Vol" },
 ] as const;
 
 export default function CryptoChartsPage() {
@@ -30,7 +31,7 @@ export default function CryptoChartsPage() {
   const [tf, setTf] = useState("1d");
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState(false);
-  const [ov, setOv] = useState({ smc: true, trend: true, ifvg: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
+  const [ov, setOv] = useState({ smc: true, trend: true, model: false, ifvg: false, killzones: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
 
   useEffect(() => {
     let on = true; setCandles(null); setErr(false);
@@ -44,6 +45,7 @@ export default function CryptoChartsPage() {
   const trendData = useMemo(() => (candles && candles.length && ov.trend ? trendlines(candles, tf === "1m" ? 21 : 14) : null), [candles, ov.trend, tf]);
   const ifvgData = useMemo(() => (candles && candles.length && ov.ifvg ? ifvg(candles) : null), [candles, ov.ifvg]);
   const kzData = useMemo(() => (candles && candles.length && ov.killzones && INTRADAY.includes(tf) ? killzones(candles, ICT_SESSIONS, ICT_TZ) : null), [candles, ov.killzones, tf]);
+  const modelData = useMemo(() => (candles && candles.length && ov.model ? modelSignals(candles) : null), [candles, ov.model]);
 
   const lines = useMemo<SRLine[]>(() => {
     const L: SRLine[] = [];
@@ -64,8 +66,9 @@ export default function CryptoChartsPage() {
     if (trendData) m.push(...trendData.markers);
     if (ifvgData) m.push(...ifvgData.markers);
     if (kzData) m.push(...kzData.markers);
+    if (modelData) m.push(...modelData.markers);
     return m;
-  }, [smcData, trendData, ifvgData, kzData]);
+  }, [smcData, trendData, ifvgData, kzData, modelData]);
 
   const levelLines = useMemo<LevelLine[]>(() => {
     const ll: LevelLine[] = [];
@@ -100,7 +103,7 @@ export default function CryptoChartsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Crypto charts</h1>
-          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with SMC, trendlines, inversion FVGs, ICT killzones, FVG, order blocks, Gann and liquidity zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
+          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with SMC, trendlines, an AI/ML signal, inversion FVGs, killzones, FVG, order blocks, Gann and zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
         </div>
         <a href="/crypto" className="text-sm text-accent-text hover:underline">← Market board</a>
       </div>
@@ -132,9 +135,16 @@ export default function CryptoChartsPage() {
           ) : !err ? <Skeleton className="h-[440px] w-full" /> : null}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-3 py-2.5 text-xs text-text-muted">
-          <span>SMC · Trendlines (21 on 1m) · IFVG (inversion gaps) · Killzones (intraday, NY time) · FVG / OB · dashed = Gann · axis IST · CoinDCX</span>
+          <span>SMC · Trendlines · AI/ML signal · IFVG · Killzones · FVG / OB · dashed = Gann · axis IST · CoinDCX</span>
         </div>
       </Card>
+      {ov.model && (
+        <p className="mt-2 text-xs text-warning">
+          {modelData && modelData.testAcc != null
+            ? `AI/ML model: logistic regression on price features, scored out-of-sample at ≈ ${Math.round(modelData.testAcc * 100)}% accuracy on this data. Experimental — near a coin-flip, not advice.`
+            : "AI/ML model: not enough candles on this timeframe to train — try a lower interval."}
+        </p>
+      )}
       <p className="mt-2 text-xs text-text-muted">&quot;XAU&quot; = tokenized gold (XAUT / PAXG). Mechanical studies — not advice.</p>
     </div>
   );

@@ -8,6 +8,7 @@ import { fairValueGaps, orderBlocks } from "@/lib/ict";
 import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
 import { ifvg } from "@/lib/indicators/ifvg";
+import { modelSignals } from "@/lib/indicators/mlSignals";
 import { killzones, INDIA_SESSIONS, INDIA_TZ } from "@/lib/indicators/killzones";
 
 const INDEXES = [
@@ -31,7 +32,7 @@ export default function ChartsPage() {
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: "index" });
-  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, ifvg: false, killzones: false });
+  const [overlay, setOverlay] = useState({ signal: false, fvg: false, ob: false, smc: true, trend: true, ifvg: false, killzones: false, model: false });
   const [strikeSide, setStrikeSide] = useState<"CE" | "PE">("CE");
   const meta = INDEXES.find((i) => i.id === index)!;
 
@@ -90,6 +91,8 @@ export default function ChartsPage() {
     return { levelLines, markers: markers.map((m) => ({ time: m.time, text: String(m.pt), up: m.up, color: m.up ? "#22c55e" : "#ef4444" })) };
   }, [overlay.signal, candles]);
 
+  const modelData = useMemo(() => (candles && candles.length && overlay.model ? modelSignals(candles) : null), [candles, overlay.model]);
+
   const chartOverlays = useMemo(() => {
     const markers = [...(orStudy.markers ?? [])];
     const levelLines = [...(orStudy.levelLines ?? [])];
@@ -120,9 +123,10 @@ export default function ChartsPage() {
         levelLines.push(...kz.levelLines);
         markers.push(...kz.markers);
       }
+      if (modelData) markers.push(...modelData.markers);
     }
     return { markers, levelLines, boxes: bx, hlines: hl };
-  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.ifvg, overlay.killzones]);
+  }, [orStudy, candles, res, overlay.fvg, overlay.ob, overlay.smc, overlay.trend, overlay.ifvg, overlay.killzones, modelData]);
 
   const stats = [
     { label: "Spot", value: fmt(opt?.spot), cls: "text-text" },
@@ -161,6 +165,7 @@ export default function ChartsPage() {
             <button onClick={() => setOverlay((o) => ({ ...o, smc: !o.smc }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.smc ? "border-border-strong text-text" : "border-border text-text-faint"}`}>SMC</button>
             <button onClick={() => setOverlay((o) => ({ ...o, trend: !o.trend }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.trend ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Trend</button>
             <button onClick={() => setOverlay((o) => ({ ...o, ifvg: !o.ifvg }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.ifvg ? "border-border-strong text-text" : "border-border text-text-faint"}`}>IFVG</button>
+            <button onClick={() => setOverlay((o) => ({ ...o, model: !o.model }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.model ? "border-border-strong text-text" : "border-border text-text-faint"}`}>AI/ML</button>
             <button onClick={() => setOverlay((o) => ({ ...o, killzones: !o.killzones }))} className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${overlay.killzones ? "border-border-strong text-text" : "border-border text-text-faint"}`}>Sessions</button>
           </div>
         </div>
@@ -195,6 +200,13 @@ export default function ChartsPage() {
           <span className="inline-flex items-center gap-1"><span className="h-2 w-3 rounded-sm" style={{ background: "rgba(62,137,250,0.55)" }} /> order block (blue up / red down)</span>
         </div>
       </Card>
+      {overlay.model && (
+        <p className="mt-2 text-xs text-warning">
+          {modelData && modelData.testAcc != null
+            ? `AI/ML model: logistic regression on price features, scored out-of-sample at ≈ ${Math.round(modelData.testAcc * 100)}% on this data. Experimental — near a coin-flip, not advice.`
+            : "AI/ML model: not enough candles to train on this timeframe — try a lower interval."}
+        </p>
+      )}
       {opt && opt.strikes.length > 0 && (
         <Card className="mt-4 p-4">
           <div className="mb-3 flex items-center justify-between">
