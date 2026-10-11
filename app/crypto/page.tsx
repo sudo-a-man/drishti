@@ -49,9 +49,10 @@ export default function CryptoPage() {
         <span className="text-xs font-semibold uppercase tracking-wider text-accent-text">Crypto</span>
       </div>
       <h1 className="font-display text-3xl font-bold tracking-tight">Crypto market</h1>
-      <p className="mb-6 mt-1.5 max-w-2xl text-text-muted">
+      <p className="mb-3 mt-1.5 max-w-2xl text-text-muted">
         Live spot prices from CoinDCX, ranked by 24-hour traded volume. The meter is a simple read of the 24h move — analytics, not advice.
       </p>
+      <a href="/crypto/charts" className="mb-6 inline-block text-sm text-accent-text hover:underline">Open candlestick charts — gold (XAU) &amp; majors →</a>
 
       <div className="flex items-center justify-between gap-3">
         <Tabs tabs={TABS} value={quote} onChange={setQuote} />
