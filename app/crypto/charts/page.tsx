@@ -6,6 +6,7 @@ import { gannSquare9 } from "@/lib/gann";
 import { fairValueGaps, orderBlocks } from "@/lib/ict";
 import { smc } from "@/lib/smc";
 import { trendlines } from "@/lib/trendlines";
+import { wyckoff, algoX, candlePatterns } from "@/lib/indicators/pine";
 
 const SYMBOLS = [
   { id: "B-XAUT_USDT", label: "Gold · XAUT / USDT" },
@@ -17,7 +18,8 @@ const SYMBOLS = [
 ];
 const INTERVALS = ["15m", "1h", "4h", "1d", "1w"];
 const TOGGLES = [
-  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "fvg", label: "FVG" },
+  { k: "smc", label: "SMC" }, { k: "trend", label: "Trend" }, { k: "wyckoff", label: "Wyckoff" },
+  { k: "algox", label: "AlgoX" }, { k: "patterns", label: "Patterns" }, { k: "fvg", label: "FVG" },
   { k: "ob", label: "OB" }, { k: "gann", label: "Gann" }, { k: "zones", label: "Zones" }, { k: "bubbles", label: "Vol" },
 ] as const;
 
@@ -26,7 +28,7 @@ export default function CryptoChartsPage() {
   const [tf, setTf] = useState("1d");
   const [candles, setCandles] = useState<Candle[] | null>(null);
   const [err, setErr] = useState(false);
-  const [ov, setOv] = useState({ smc: true, trend: true, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
+  const [ov, setOv] = useState({ smc: true, trend: true, wyckoff: false, algox: false, patterns: false, fvg: false, ob: false, gann: false, zones: false, bubbles: false });
 
   useEffect(() => {
     let on = true; setCandles(null); setErr(false);
@@ -38,6 +40,9 @@ export default function CryptoChartsPage() {
 
   const smcData = useMemo(() => (candles && candles.length && ov.smc ? smc(candles) : null), [candles, ov.smc]);
   const trendData = useMemo(() => (candles && candles.length && ov.trend ? trendlines(candles, tf === "15m" ? 21 : 14) : null), [candles, ov.trend, tf]);
+  const wyckData = useMemo(() => (candles && candles.length && ov.wyckoff ? wyckoff(candles) : null), [candles, ov.wyckoff]);
+  const algoData = useMemo(() => (candles && candles.length && ov.algox ? algoX(candles) : null), [candles, ov.algox]);
+  const patData = useMemo(() => (candles && candles.length && ov.patterns ? candlePatterns(candles) : null), [candles, ov.patterns]);
 
   const lines = useMemo<SRLine[]>(() => {
     const L: SRLine[] = [];
@@ -56,15 +61,20 @@ export default function CryptoChartsPage() {
     const m: Marker[] = [];
     if (smcData) m.push(...smcData.markers);
     if (trendData) m.push(...trendData.markers);
+    if (wyckData) m.push(...wyckData.markers.slice(-30));
+    if (algoData) m.push(...algoData.markers.slice(-30));
+    if (patData) m.push(...patData.markers.slice(-24));
     return m;
-  }, [smcData, trendData]);
+  }, [smcData, trendData, wyckData, algoData, patData]);
 
   const levelLines = useMemo<LevelLine[]>(() => {
     const ll: LevelLine[] = [];
     if (smcData) ll.push(...smcData.lines.map((l) => ({ color: l.color, dashed: l.dashed, points: [{ time: l.from, value: l.price }, { time: l.to, value: l.price }] })));
     if (trendData) ll.push(...trendData.lines.map((l) => ({ color: l.color, dashed: l.dashed, noScale: l.noScale, points: l.points })));
+    if (wyckData) ll.push(...wyckData.levelLines);
+    if (algoData) ll.push(...algoData.levelLines);
     return ll;
-  }, [smcData, trendData]);
+  }, [smcData, trendData, wyckData, algoData]);
 
   const boxes = useMemo(() => {
     const bx: { time: number; top: number; bottom: number; rgb: string }[] = [];
@@ -90,7 +100,7 @@ export default function CryptoChartsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Crypto charts</h1>
-          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with the full indicator suite — SMC structure, trendlines, FVG, order blocks, Gann, liquidity zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
+          <p className="mt-1.5 max-w-3xl text-text-muted">CoinDCX candles with the full indicator suite plus your Pine ports — SMC, trendlines, Wyckoff, AlgoX, candlestick patterns, FVG, order blocks, Gann, zones. Gold (XAUT/PAXG) &amp; majors. Analytics, not advice.</p>
         </div>
         <a href="/crypto" className="text-sm text-accent-text hover:underline">← Market board</a>
       </div>
@@ -122,13 +132,11 @@ export default function CryptoChartsPage() {
           ) : !err ? <Skeleton className="h-[440px] w-full" /> : null}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-3 py-2.5 text-xs text-text-muted">
-          <span>SMC: BOS/CHoCH, HH/HL/LH/LL, EQH/EQL, premium/discount</span>
-          <span>Trend: trendlines + B breakouts</span>
-          <span>FVG / OB boxes · dashed = Gann</span>
-          <span>Times in IST · Source: CoinDCX</span>
+          <span>SMC · Trendlines · Wyckoff (box + Spring/Upthrust/ST) · AlgoX (EMA cross) · Patterns (engulf/hammer/star/marubozu)</span>
+          <span>FVG / OB · dashed = Gann · Times IST · Source: CoinDCX</span>
         </div>
       </Card>
-      <p className="mt-2 text-xs text-text-muted">&quot;XAU&quot; = tokenized gold (XAUT / PAXG). A mechanical study of price — not advice.</p>
+      <p className="mt-2 text-xs text-text-muted">&quot;XAU&quot; = tokenized gold (XAUT / PAXG). Ports of your TradingView scripts — mechanical studies of price, not advice.</p>
     </div>
   );
 }
