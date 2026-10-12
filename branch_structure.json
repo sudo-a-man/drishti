@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/ai-ml-signal",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/ai-ml-signal": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/ai-ml-signal",
+    "origin"
+  ]
+}

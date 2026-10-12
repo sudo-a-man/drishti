@@ -8,7 +8,7 @@ export const UNDERLYINGS: Record<string, { symbol: string; label: string }> = {
   sensex: { symbol: "BSE:SENSEX-INDEX", label: "Sensex" },
 };
 
-type Strike = { strike: number; ceOI: number; peOI: number; ceLTP: number; peLTP: number; ceSym: string; peSym: string };
+type Strike = { strike: number; ceOI: number; peOI: number; ceOICh: number; peOICh: number; ceLTP: number; peLTP: number; ceSym: string; peSym: string };
 
 // Fetch an index option chain from Fyers and compute max pain + PCR.
 // Max pain = the strike where option writers' total payout is smallest.
@@ -29,13 +29,14 @@ export async function optionAnalytics(key: string) {
     const type = row.option_type ?? row.type ?? "";
     const strike = Number(row.strike_price ?? row.strikePrice ?? row.strike);
     const oi = Number(row.oi ?? row.openInterest ?? 0);
+    const oich = Number(row.oich ?? row.oiChange ?? 0); // change in OI since previous session close
     const ltp = Number(row.ltp ?? 0);
     const sym = String(row.symbol ?? row.ex_symbol ?? row.fyToken ?? "");
     if (!type) { spot = Number(row.ltp ?? row.fp ?? spot) || spot; continue; }
     if (!strike) continue;
-    const s = byStrike.get(strike) ?? { strike, ceOI: 0, peOI: 0, ceLTP: 0, peLTP: 0, ceSym: "", peSym: "" };
-    if (type === "CE") { s.ceOI = oi; s.ceLTP = ltp; s.ceSym = sym || s.ceSym; }
-    else if (type === "PE") { s.peOI = oi; s.peLTP = ltp; s.peSym = sym || s.peSym; }
+    const s = byStrike.get(strike) ?? { strike, ceOI: 0, peOI: 0, ceOICh: 0, peOICh: 0, ceLTP: 0, peLTP: 0, ceSym: "", peSym: "" };
+    if (type === "CE") { s.ceOI = oi; s.ceOICh = oich; s.ceLTP = ltp; s.ceSym = sym || s.ceSym; }
+    else if (type === "PE") { s.peOI = oi; s.peOICh = oich; s.peLTP = ltp; s.peSym = sym || s.peSym; }
     byStrike.set(strike, s);
   }
   const strikes = [...byStrike.values()].sort((a, b) => a.strike - b.strike);
@@ -58,6 +59,12 @@ export async function optionAnalytics(key: string) {
   // Highest call OI = resistance wall; highest put OI = support wall.
   const callWall = strikes.length ? strikes.reduce((m, s) => (s.ceOI > m.ceOI ? s : m)).strike : 0;
   const putWall = strikes.length ? strikes.reduce((m, s) => (s.peOI > m.peOI ? s : m)).strike : 0;
+  // Where fresh OI is being written today = the wall that is *forming* (strongest OI build on each side).
+  const ceAdds = strikes.filter((s) => s.ceOICh > 0);
+  const peAdds = strikes.filter((s) => s.peOICh > 0);
+  const callWallForming = ceAdds.length ? ceAdds.reduce((m, s) => (s.ceOICh > m.ceOICh ? s : m)).strike : 0;
+  const putWallForming = peAdds.length ? peAdds.reduce((m, s) => (s.peOICh > m.peOICh ? s : m)).strike : 0;
+  const vix = Number(json.data.indiavixData?.ltp ?? 0) || 0;
 
-  return { underlying: key, label: u.label, spot, expiry, maxPain, pcr, callWall, putWall, strikes };
+  return { underlying: key, label: u.label, spot, expiry, maxPain, pcr, callWall, putWall, callWallForming, putWallForming, vix, strikes };
 }
