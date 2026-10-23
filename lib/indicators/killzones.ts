@@ -4,6 +4,7 @@
 import type { Candle } from "@/components/PriceChart";
 
 export type Session = { name: string; start: number; end: number; color: string }; // start/end = minutes from local midnight
+export type KZInstance = { name: string; color: string; start: number; end: number; hi: number; lo: number };
 type LL = { color: string; dashed: boolean | undefined; points: { time: number; value: number }[] };
 type MK = { time: number; text: string; up: boolean; color: string };
 
@@ -24,9 +25,8 @@ export const INDIA_SESSIONS: Session[] = [
 ];
 export const INDIA_TZ = 330; // UTC+5:30, minutes
 
-export function killzones(c: Candle[], sessions: Session[], tzOffsetMin: number, maxInstances = 16): { levelLines: LL[]; markers: MK[] } {
-  type Inst = { name: string; color: string; start: number; end: number; hi: number; lo: number };
-  const insts: Inst[] = [];
+export function killzones(c: Candle[], sessions: Session[], tzOffsetMin: number, maxInstances = 12): { levelLines: LL[]; markers: MK[]; instances: KZInstance[] } {
+  const insts: KZInstance[] = [];
   for (const s of sessions) {
     let inRun = false, hi = -Infinity, lo = Infinity, startT = 0, endT = 0;
     const flush = () => { if (inRun && endT > startT) insts.push({ name: s.name, color: s.color, start: startT, end: endT, hi, lo }); inRun = false; hi = -Infinity; lo = Infinity; };
@@ -43,10 +43,16 @@ export function killzones(c: Candle[], sessions: Session[], tzOffsetMin: number,
   insts.sort((a, b) => a.start - b.start);
   const levelLines: LL[] = [];
   const markers: MK[] = [];
-  for (const z of insts.slice(-maxInstances)) {
+  const shown = insts.slice(-maxInstances);
+  const labeled = new Set<string>();
+  // Draw newest → oldest so only the most recent instance of each session keeps a
+  // text label; older instances still get their high/low band, without the clutter
+  // of the same "Opening" / "Mid-day" label repeating on every day.
+  for (let k = shown.length - 1; k >= 0; k--) {
+    const z = shown[k];
     levelLines.push({ color: z.color, dashed: undefined, points: [{ time: z.start, value: z.hi }, { time: z.end, value: z.hi }] });
     levelLines.push({ color: z.color, dashed: undefined, points: [{ time: z.start, value: z.lo }, { time: z.end, value: z.lo }] });
-    markers.push({ time: z.start, text: z.name, up: false, color: z.color });
+    if (!labeled.has(z.name)) { markers.push({ time: z.start, text: z.name, up: false, color: z.color }); labeled.add(z.name); }
   }
-  return { levelLines, markers };
+  return { levelLines, markers, instances: shown };
 }

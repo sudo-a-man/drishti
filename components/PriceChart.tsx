@@ -10,7 +10,7 @@ import { liquidityZones, isHighVolume, type VolCandle } from "@/lib/zones";
 export type Candle = { time: number; open: number; high: number; low: number; close: number; volume?: number };
 export type SRLine = { price: number; color: string; title: string; dashed?: boolean };
 export type Marker = { time: number; text: string; up: boolean; color?: string };
-export type LevelLine = { color: string; dashed?: boolean; noScale?: boolean; points: { time: number; value?: number }[] };
+export type LevelLine = { color: string; dashed?: boolean; noScale?: boolean; width?: number; points: { time: number; value?: number }[] };
 
 const fmtVol = (v?: number) => {
   if (!v) return "";
@@ -106,8 +106,15 @@ export default function PriceChart({ candles, lines = [], showBubbles = true, sh
     lineRefs.current.forEach((ls) => chart.removeSeries(ls));
     lineRefs.current = [];
     for (const ll of levelLines ?? []) {
-      const ser = chart.addLineSeries({ color: ll.color, lineWidth: 2, lineStyle: ll.dashed ? LineStyle.Dashed : LineStyle.Solid, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false, ...(ll.noScale ? { autoscaleInfoProvider: () => null } : {}) });
-      ser.setData(ll.points.map((p) => (p.value === undefined ? { time: p.time as UTCTimestamp } : { time: p.time as UTCTimestamp, value: p.value })) as (LineData | WhitespaceData)[]);
+      // lightweight-charts throws ("data must be asc ordered by time") on duplicate
+      // or out-of-order timestamps — which a session/opening-range band collapses to
+      // when its window is a single candle. Sort, de-duplicate, and skip any series
+      // that collapses to fewer than 2 points so one bad segment can't break the chart.
+      const seen = new Set<number>();
+      const pts = [...ll.points].sort((a, b) => a.time - b.time).filter((p) => (seen.has(p.time) ? false : (seen.add(p.time), true)));
+      if (pts.length < 2) continue;
+      const ser = chart.addLineSeries({ color: ll.color, lineWidth: (ll.width ?? 2) as 1 | 2 | 3 | 4, lineStyle: ll.dashed ? LineStyle.Dashed : LineStyle.Solid, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false, ...(ll.noScale ? { autoscaleInfoProvider: () => null } : {}) });
+      ser.setData(pts.map((p) => (p.value === undefined ? { time: p.time as UTCTimestamp } : { time: p.time as UTCTimestamp, value: p.value })) as (LineData | WhitespaceData)[]);
       lineRefs.current.push(ser);
     }
   }, [levelLines]);
